@@ -189,6 +189,7 @@
     <None Include="..\util\key_value_packing.hh" />
     <None Include="..\util\mmap.hh" />
     <None Include="..\util\murmur_hash.hh" />
+    <None Include="..\util\parallel_read.hh" />
     <None Include="..\util\probing_hash_table.hh" />
     <None Include="..\util\proxy_iterator.hh" />
     <None Include="..\util\scoped.hh" />
@@ -207,6 +208,7 @@
     <ClCompile Include="..\util\double-conversion\fast-dtoa.cc" />
     <ClCompile Include="..\util\double-conversion\fixed-dtoa.cc" />
     <ClCompile Include="..\util\double-conversion\strtod.cc" />
+    <ClCompile Include="..\util\parallel_read.cc" />
     <ClCompile Include="..\util\pool.cc" />
     <ClCompile Include="..\util\read_compressed.cc" />
     <ClCompile Include="..\util\scoped.cc" />
