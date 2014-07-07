@@ -1,6 +1,8 @@
 ﻿
-Microsoft Visual Studio Solution File, Format Version 11.00
-# Visual C++ Express 2010
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2013
+VisualStudioVersion = 12.0.30501.0
+MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "kenlm", "kenlm.vcxproj", "{E834D71C-5D5F-4FB4-A361-88694C438FF9}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ngram_query", "ngram_query.vcxproj", "{826B8049-7E58-4415-BD64-9EDECDF1402B}"
@@ -14,6 +16,9 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "build_binary", "build_binar
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "lmplz", "lmplz.vcxproj", "{926B8049-7E58-4415-BD64-9EDECDF1502C}"
+	ProjectSection(ProjectDependencies) = postProject
+		{E834D71C-5D5F-4FB4-A361-88694C438FF9} = {E834D71C-5D5F-4FB4-A361-88694C438FF9}
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
