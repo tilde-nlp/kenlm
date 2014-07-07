@@ -6,5 +6,18 @@ If you only want the query code and do not care about compression (.gz, .bz2, an
   ./compile_query_only.sh
 
 Windows:
-  The windows directory has visual studio files.  Note that you need to compile
-  the kenlm project before build_binary and ngram_query projects.  
+  The windows directory has visual studio files.
+  Note that you need to compile the kenlm project before build_binary and ngram_query projects
+  but this happens automatically if you build the whole solution.
+  
+  Visual Studio 2013 is used.
+  
+  Boost v1.55.0 should be installed in "C:\Program Files\boost\boost_1_55_0".
+  You can download boost source from http://sourceforge.net/projects/boost/files/boost/1.55.0/
+  You can download boost binaries from http://sourceforge.net/projects/boost/files/boost-binaries/1.55.0-build2/
+  
+  C:\Program Files\boost\boost_1_55_0
+  - boost
+  - lib32-msvc-12.0 (for Win32)
+  - lib64-msvc-12.0 (for x64)
+  - ...
