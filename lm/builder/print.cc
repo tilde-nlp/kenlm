@@ -49,10 +49,10 @@ void PrintARPA::Run(const util::stream::ChainPositions &positions) {
   for (unsigned order = 1; order <= positions.size(); ++order) {
     out << "\\" << order << "-grams:" << '\n';
     for (NGramStream stream(positions[order - 1]); stream; ++stream) {
-      // Correcting for numerical precision issues.  Take that IRST.
       if (counts_only_) {
         out << stream->Value().count;
       } else {
+        // Correcting for numerical precision issues.  Take that IRST.
         out << std::min(0.0f, stream->Value().complete.prob);
       }
       out << '\t' << vocab_.Lookup(*stream->begin());
