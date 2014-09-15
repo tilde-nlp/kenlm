@@ -319,7 +319,7 @@ void Pipeline(PipelineConfig config, int text_file, int out_arpa) {
     std::vector<Discount> discounts;
     master >> AdjustCounts(counts, counts_pruned, discounts, config.prune_thresholds);
 
-    {
+    if (!config.counts_only) {
       util::FixedArray<util::stream::FileBuffer> gammas;
       Sorts<SuffixOrder> primary;
       InitialProbabilities(counts, counts_pruned, discounts, master, primary, gammas, config.prune_thresholds);
@@ -328,7 +328,7 @@ void Pipeline(PipelineConfig config, int text_file, int out_arpa) {
 
     std::cerr << "=== 5/5 Writing ARPA model ===" << std::endl;
     VocabReconstitute vocab(vocab_file.get());
-    UTIL_THROW_IF(vocab.Size() != counts[0], util::Exception, "Vocab words don't match up.  Is there a null byte in the input?");
+    UTIL_THROW_IF(!config.counts_only && vocab.Size() != counts[0], util::Exception, "Vocab words don't match up.  Is there a null byte in the input?");
     HeaderInfo header_info(text_file_name, token_count);
     master >> PrintARPA(vocab, counts_pruned, (config.verbose_header ? &header_info : NULL), config.counts_only, out_arpa) >> util::stream::kRecycle;
     master.MutableChains().Wait(true);
