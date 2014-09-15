@@ -51,7 +51,7 @@ class FakeOFStream {
     }
 
     FakeOFStream &operator<<(uint64_t value) {
-      // todo
+      // TODO
       std::stringstream stream; stream << value;
       std::string str(stream.str());
       if (str.size() > kOutBuf) {
