@@ -72,7 +72,7 @@
     <IntDir>Build\$(Platform)\$(Configuration)\obj\kenlm\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <TargetName>$(ProjectName)d</TargetName>
+    <TargetName>$(ProjectName)</TargetName>
     <OutDir>Build\$(Platform)\$(Configuration)\</OutDir>
     <IntDir>Build\$(Platform)\$(Configuration)\obj\kenlm\</IntDir>
   </PropertyGroup>
