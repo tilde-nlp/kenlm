@@ -249,8 +249,6 @@ void InitialProbabilities(const std::vector<uint64_t> &counts, const std::vector
     master.SortAndReadTwice(counts_pruned, sorts, second, config.initial_probs.adder_in);
   }
 
-  if (config.counts_only) return;
-
   util::stream::Chains gamma_chains(config.order);
   InitialProbabilities(config.initial_probs, discounts, master.MutableChains(), second, gamma_chains, prune_thresholds);
   // Don't care about gamma for 0.  
@@ -319,21 +317,23 @@ void Pipeline(PipelineConfig config, int text_file, int out_arpa) {
     std::vector<uint64_t> counts;
     std::vector<uint64_t> counts_pruned;
     std::vector<Discount> discounts;
-    master >> AdjustCounts(counts, counts_pruned, discounts, config.prune_thresholds);
 
-    {
-      util::FixedArray<util::stream::FileBuffer> gammas;
-      Sorts<SuffixOrder> primary;
-      InitialProbabilities(counts, counts_pruned, discounts, master, primary, gammas, config.prune_thresholds);
+    if (!config.counts_only) {
+      master >> AdjustCounts(counts, counts_pruned, discounts, config.prune_thresholds);
 
-      if (!config.counts_only) {
+      {
+        util::FixedArray<util::stream::FileBuffer> gammas;
+        Sorts<SuffixOrder> primary;
+        InitialProbabilities(counts, counts_pruned, discounts, master, primary, gammas, config.prune_thresholds);
         InterpolateProbabilities(counts_pruned, master, primary, gammas);
       }
+    } else {
+      master >> DontAdjustCounts(); 
     }
 
     std::cerr << "=== 5/5 Writing ARPA model ===" << std::endl;
     VocabReconstitute vocab(vocab_file.get());
-    UTIL_THROW_IF(vocab.Size() != counts[0], util::Exception, "Vocab words don't match up.  Is there a null byte in the input?");
+    //UTIL_THROW_IF(vocab.Size() != counts[0], util::Exception, "Vocab words don't match up.  Is there a null byte in the input?");
     HeaderInfo header_info(text_file_name, token_count);
     master >> PrintARPA(vocab, counts_pruned, (config.verbose_header ? &header_info : NULL), config.counts_only, out_arpa) >> util::stream::kRecycle;
     master.MutableChains().Wait(true);

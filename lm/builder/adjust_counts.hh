@@ -40,6 +40,11 @@ class AdjustCounts {
     std::vector<uint64_t> &prune_thresholds_; 
 };
 
+class DontAdjustCounts {
+  public:
+    void Run(const util::stream::ChainPositions &positions);
+};
+
 } // namespace builder
 } // namespace lm
 

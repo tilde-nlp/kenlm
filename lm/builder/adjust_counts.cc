@@ -267,4 +267,15 @@ void AdjustCounts::Run(const util::stream::ChainPositions &positions) {
   // NOTE: See special early-return case for unigrams near the top of this function
 }
 
+void DontAdjustCounts::Run(const util::stream::ChainPositions &positions) {
+  NGramStreams streams;
+  streams.Init(positions, positions.size() - 1);
+
+  for (util::stream::Link block(positions[positions.size() - 1]); block; ++block)
+    ;
+
+  for (NGramStream *s = streams.begin(); s != streams.end(); ++s)
+    s->Poison();
+}
+
 }} // namespaces
