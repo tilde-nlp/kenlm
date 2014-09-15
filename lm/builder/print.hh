@@ -90,12 +90,13 @@ class PrintARPA {
   public:
     // header_info may be NULL to disable the header.
     // Takes ownership of out_fd upon Run().
-    explicit PrintARPA(const VocabReconstitute &vocab, const std::vector<uint64_t> &counts, const HeaderInfo* header_info, int out_fd);
+    explicit PrintARPA(const VocabReconstitute &vocab, const std::vector<uint64_t> &counts, const HeaderInfo* header_info, const bool counts_only, int out_fd);
 
     void Run(const util::stream::ChainPositions &positions);
 
   private:
     const VocabReconstitute &vocab_;
+    const bool counts_only_;
     int out_fd_;
 };
 

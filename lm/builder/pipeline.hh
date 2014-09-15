@@ -20,6 +20,7 @@ struct PipelineConfig {
   InitialProbabilitiesConfig initial_probs;
   util::stream::ChainConfig read_backoffs;
   bool verbose_header;
+  bool counts_only;
 
   // Estimated vocabulary size.  Used for sizing CorpusCount memory and
   // initial probing hash table sizing, also in CorpusCount.

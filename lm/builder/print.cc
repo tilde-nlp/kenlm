@@ -24,8 +24,8 @@ VocabReconstitute::VocabReconstitute(int fd) {
   map_.push_back(i);
 }
 
-PrintARPA::PrintARPA(const VocabReconstitute &vocab, const std::vector<uint64_t> &counts, const HeaderInfo* header_info, int out_fd) 
-  : vocab_(vocab), out_fd_(out_fd) {
+PrintARPA::PrintARPA(const VocabReconstitute &vocab, const std::vector<uint64_t> &counts, const HeaderInfo* header_info, const bool counts_only, int out_fd) 
+  : vocab_(vocab), counts_only_(counts_only), out_fd_(out_fd) {
   std::stringstream stream;
 
   if (header_info) {
@@ -50,11 +50,16 @@ void PrintARPA::Run(const util::stream::ChainPositions &positions) {
     out << "\\" << order << "-grams:" << '\n';
     for (NGramStream stream(positions[order - 1]); stream; ++stream) {
       // Correcting for numerical precision issues.  Take that IRST.
-      out << std::min(0.0f, stream->Value().complete.prob) << '\t' << vocab_.Lookup(*stream->begin());
+      if (counts_only_) {
+        out << stream->Value().count;
+      } else {
+        out << std::min(0.0f, stream->Value().complete.prob);
+      }
+      out << '\t' << vocab_.Lookup(*stream->begin());
       for (const WordIndex *i = stream->begin() + 1; i != stream->end(); ++i) {
         out << ' ' << vocab_.Lookup(*i);
       }
-      if (order != positions.size())
+      if (order != positions.size() && !counts_only_)
         out << '\t' << stream->Value().complete.backoff;
       out << '\n';
     

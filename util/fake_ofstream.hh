@@ -50,6 +50,20 @@ class FakeOFStream {
       return *this;
     }
 
+    FakeOFStream &operator<<(uint64_t value) {
+      // todo
+      std::stringstream stream; stream << value;
+      std::string str(stream.str());
+      if (str.size() > kOutBuf) {
+        Flush();
+        util::WriteOrThrow(fd_, str.data(), str.size());
+      } else {
+        EnsureRemaining(str.size());
+        builder_.AddSubstring(str.data(), str.size());
+      }
+      return *this;
+    }
+
     FakeOFStream &operator<<(StringPiece str) {
       if (str.size() > kOutBuf) {
         Flush();
