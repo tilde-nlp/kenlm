@@ -8,6 +8,7 @@
 #include <cstddef>
 #include <string>
 #include <stdint.h>
+#include <vector>
 
 namespace util {
 class FilePiece;
@@ -29,13 +30,14 @@ class CorpusCount {
 
     // token_count: out.
     // type_count aka vocabulary size.  Initialize to an estimate.  It is set to the exact value.
-    CorpusCount(util::FilePiece &from, int vocab_write, uint64_t &token_count, WordIndex &type_count, uint64_t &ngram_count, std::size_t entries_per_block, WarningAction disallowed_symbol);
+    CorpusCount(util::FilePiece &from, int vocab_write, const std::vector<std::string> &counts_files, uint64_t &token_count, WordIndex &type_count, uint64_t &ngram_count, std::size_t entries_per_block, WarningAction disallowed_symbol);
 
     void Run(const util::stream::ChainPosition &position);
 
   private:
     util::FilePiece &from_;
     int vocab_write_;
+    const std::vector<std::string> &counts_files_;
     uint64_t &token_count_;
     WordIndex &type_count_;
     uint64_t &ngram_count_;

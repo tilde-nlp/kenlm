@@ -139,6 +139,45 @@ class Writer {
       std::copy(buffer_.get(), buffer_.get() + gram_.Order() - 1, gram_.begin());
     }
 
+    void Append(const std::vector<WordIndex> &toadd, uint64_t count) {
+      NGram last(gram_); // save prev
+
+      // construct ngram
+      for (size_t i = 0; i < toadd.size(); i++) {
+        *(gram_.begin() + i) = toadd[i];
+      }
+
+      // check if exists
+      Dedupe::MutableIterator at;
+      bool found = dedupe_.FindOrInsert(DedupeEntry::Construct(gram_.begin()), at);
+      if (found) {
+        // already present
+        NGram already(at->key, gram_.Order());
+        //already.Count() += count;
+        ++(already.Count());
+        // restore prev
+        std::copy(last.begin(), last.end(), gram_.begin());
+        return;
+      }
+
+      //gram_.Count() = count;
+      gram_.Count() = 1;
+      ++total_;
+      
+      // Prepare the next n-gram.
+      if (reinterpret_cast<uint8_t*>(gram_.begin()) + gram_.TotalSize() != static_cast<uint8_t*>(block_->Get()) + block_size_) {
+        gram_.NextInMemory();
+      } else {
+        // Block end.
+        dedupe_.Clear();
+        block_->SetValidSize(block_size_);
+        gram_.ReBase((++block_)->Get());
+      }
+
+      // restore prev
+      std::copy(last.begin(), last.end(), gram_.begin());
+    }
+
     uint64_t TotalNgramCount() {
       return total_;
     }
@@ -181,8 +220,8 @@ std::size_t CorpusCount::VocabUsage(std::size_t vocab_estimate) {
   return ngram::GrowableVocab<ngram::WriteUniqueWords>::MemUsage(vocab_estimate);
 }
 
-CorpusCount::CorpusCount(util::FilePiece &from, int vocab_write, uint64_t &token_count, WordIndex &type_count, uint64_t &ngram_count, std::size_t entries_per_block, WarningAction disallowed_symbol)
-  : from_(from), vocab_write_(vocab_write), token_count_(token_count), type_count_(type_count), ngram_count_(ngram_count),
+CorpusCount::CorpusCount(util::FilePiece &from, int vocab_write, const std::vector<std::string> &counts_files, uint64_t &token_count, WordIndex &type_count, uint64_t &ngram_count, std::size_t entries_per_block, WarningAction disallowed_symbol)
+  : from_(from), vocab_write_(vocab_write), counts_files_(counts_files), token_count_(token_count), type_count_(type_count), ngram_count_(ngram_count),
     dedupe_mem_size_(Dedupe::Size(entries_per_block, kProbingMultiplier)),
     dedupe_mem_(util::MallocOrThrow(dedupe_mem_size_)),
     disallowed_symbol_action_(disallowed_symbol) {
@@ -208,10 +247,51 @@ void CorpusCount::Run(const util::stream::ChainPosition &position) {
   token_count_ = 0;
   type_count_ = 0;
   const WordIndex end_sentence = vocab.FindOrInsert("</s>");
-  Writer writer(NGram::OrderFromSize(position.GetChain().EntrySize()), position, dedupe_mem_.get(), dedupe_mem_size_);
+  size_t order = NGram::OrderFromSize(position.GetChain().EntrySize());
+  Writer writer(order, position, dedupe_mem_.get(), dedupe_mem_size_);
   uint64_t count = 0;
   bool delimiters[256];
   util::BoolCharacter::Build("\0\t\n\r ", delimiters);
+
+  // read highest order ngrams from arpa files
+  std::stringstream ss; ss << "\\" << order << "-grams:";
+  const std::string arpa_start = ss.str();
+  for (size_t i = 0; i < counts_files_.size(); i++) {
+    util::scoped_fd fd(util::OpenReadOrThrow(counts_files_[i].c_str()));
+    util::FilePiece file(fd.release(), NULL, &std::cerr);
+    try {
+      bool started = false;
+      while (true) {
+        StringPiece line(file.ReadLine());
+        if (line.starts_with("\\")) {
+          started = line.starts_with(arpa_start);
+          continue;
+        }
+        if (started) {
+          //std::cerr << "NGRAM" << line.as_string() << std::endl;
+          uint64_t c = 0;
+          int i = 0;
+          std::vector<WordIndex> words;
+          for (util::TokenIter<util::BoolCharacter, true> w(line, delimiters); w; ++w, ++i) {
+            if (i == 0) {
+              c = boost::lexical_cast<uint64_t>(*w);
+              if (c == 0) {
+                break;
+              }
+            } else {
+              WordIndex word = vocab.FindOrInsert(*w);
+              words.push_back(word);
+            }
+          }
+          if (c > 0 && words.size() == order) {
+            writer.Append(words, c);
+          }
+        }
+      }
+    }
+    catch (const util::EndOfFileException &e) {}
+  }
+
   try {
     while(true) {
       StringPiece line(from_.ReadLine());

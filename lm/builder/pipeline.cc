@@ -225,7 +225,7 @@ void CountText(int text_file /* input */, int vocab_file /* output */, Master &m
   WordIndex type_count = config.vocab_estimate;
   util::FilePiece text(text_file, NULL, &std::cerr);
   text_file_name = text.FileName();
-  CorpusCount counter(text, vocab_file, token_count, type_count, ngram_count, chain.BlockSize() / chain.EntrySize(), config.disallowed_symbol_action);
+  CorpusCount counter(text, vocab_file, config.counts_arpa, token_count, type_count, ngram_count, chain.BlockSize() / chain.EntrySize(), config.disallowed_symbol_action);
   chain >> boost::ref(counter);
 
   util::stream::Sort<SuffixOrder, AddCombiner> sorter(chain, config.sort, SuffixOrder(config.order), AddCombiner());
@@ -317,8 +317,8 @@ void Pipeline(PipelineConfig config, int text_file, int out_arpa) {
     std::string text_file_name;
     CountText(text_file, vocab_file.get(), master, token_count, ngram_count, text_file_name);
 
-    std::vector<uint64_t> counts(config.order, 0);
-    std::vector<uint64_t> counts_pruned(config.order, 0);
+    std::vector<uint64_t> counts;
+    std::vector<uint64_t> counts_pruned;
     std::vector<Discount> discounts;
 
     if (!config.counts_only) {
@@ -332,6 +332,8 @@ void Pipeline(PipelineConfig config, int text_file, int out_arpa) {
       }
     } else {
       master >> DontAdjustCounts(); 
+      counts.resize(config.order, 0);
+      counts_pruned.resize(config.order, 0);
       counts[config.order - 1] = counts_pruned[config.order - 1] = ngram_count;
     }
 
