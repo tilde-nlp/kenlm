@@ -87,7 +87,7 @@ class Writer {
         dedupe_invalid_(order, std::numeric_limits<WordIndex>::max()),
         dedupe_(dedupe_mem, dedupe_mem_size, &dedupe_invalid_[0], DedupeHash(order), DedupeEquals(order)),
         buffer_(new WordIndex[order - 1]),
-        block_size_(position.GetChain().BlockSize()) {
+        block_size_(position.GetChain().BlockSize()), total_(0) {
       dedupe_.Clear();
       assert(Dedupe::Size(position.GetChain().BlockSize() / position.GetChain().EntrySize(), kProbingMultiplier) == dedupe_mem_size);
       if (order == 1) {
@@ -123,6 +123,7 @@ class Writer {
       }
       // Complete the write.  
       gram_.Count() = 1;
+      ++total_;
       // Prepare the next n-gram.  
       if (reinterpret_cast<uint8_t*>(gram_.begin()) + gram_.TotalSize() != static_cast<uint8_t*>(block_->Get()) + block_size_) {
         NGram last(gram_);
@@ -136,6 +137,10 @@ class Writer {
       block_->SetValidSize(block_size_);
       gram_.ReBase((++block_)->Get());
       std::copy(buffer_.get(), buffer_.get() + gram_.Order() - 1, gram_.begin());
+    }
+
+    uint64_t TotalNgramCount() {
+      return total_;
     }
 
   private:
@@ -162,6 +167,8 @@ class Writer {
     boost::scoped_array<WordIndex> buffer_;
 
     const std::size_t block_size_;
+
+    std::size_t total_;
 };
 
 } // namespace
@@ -174,8 +181,8 @@ std::size_t CorpusCount::VocabUsage(std::size_t vocab_estimate) {
   return ngram::GrowableVocab<ngram::WriteUniqueWords>::MemUsage(vocab_estimate);
 }
 
-CorpusCount::CorpusCount(util::FilePiece &from, int vocab_write, uint64_t &token_count, WordIndex &type_count, std::size_t entries_per_block, WarningAction disallowed_symbol)
-  : from_(from), vocab_write_(vocab_write), token_count_(token_count), type_count_(type_count),
+CorpusCount::CorpusCount(util::FilePiece &from, int vocab_write, uint64_t &token_count, WordIndex &type_count, uint64_t &ngram_count, std::size_t entries_per_block, WarningAction disallowed_symbol)
+  : from_(from), vocab_write_(vocab_write), token_count_(token_count), type_count_(type_count), ngram_count_(ngram_count),
     dedupe_mem_size_(Dedupe::Size(entries_per_block, kProbingMultiplier)),
     dedupe_mem_(util::MallocOrThrow(dedupe_mem_size_)),
     disallowed_symbol_action_(disallowed_symbol) {
@@ -223,6 +230,7 @@ void CorpusCount::Run(const util::stream::ChainPosition &position) {
   } catch (const util::EndOfFileException &e) {}
   token_count_ = count;
   type_count_ = vocab.Size();
+  ngram_count_ = writer.TotalNgramCount();
 }
 
 } // namespace builder

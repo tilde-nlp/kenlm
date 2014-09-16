@@ -29,7 +29,7 @@ class CorpusCount {
 
     // token_count: out.
     // type_count aka vocabulary size.  Initialize to an estimate.  It is set to the exact value.
-    CorpusCount(util::FilePiece &from, int vocab_write, uint64_t &token_count, WordIndex &type_count, std::size_t entries_per_block, WarningAction disallowed_symbol);
+    CorpusCount(util::FilePiece &from, int vocab_write, uint64_t &token_count, WordIndex &type_count, uint64_t &ngram_count, std::size_t entries_per_block, WarningAction disallowed_symbol);
 
     void Run(const util::stream::ChainPosition &position);
 
@@ -38,6 +38,7 @@ class CorpusCount {
     int vocab_write_;
     uint64_t &token_count_;
     WordIndex &type_count_;
+    uint64_t &ngram_count_;
 
     std::size_t dedupe_mem_size_;
     util::scoped_malloc dedupe_mem_;

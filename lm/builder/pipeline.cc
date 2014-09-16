@@ -207,7 +207,7 @@ class Master {
     util::FixedArray<util::stream::FileBuffer> files_;
 };
 
-void CountText(int text_file /* input */, int vocab_file /* output */, Master &master, uint64_t &token_count, std::string &text_file_name) {
+void CountText(int text_file /* input */, int vocab_file /* output */, Master &master, uint64_t &token_count, uint64_t &ngram_count, std::string &text_file_name) {
   const PipelineConfig &config = master.Config();
   std::cerr << "=== 1/5 Counting and sorting n-grams ===" << std::endl;
 
@@ -225,13 +225,15 @@ void CountText(int text_file /* input */, int vocab_file /* output */, Master &m
   WordIndex type_count = config.vocab_estimate;
   util::FilePiece text(text_file, NULL, &std::cerr);
   text_file_name = text.FileName();
-  CorpusCount counter(text, vocab_file, token_count, type_count, chain.BlockSize() / chain.EntrySize(), config.disallowed_symbol_action);
+  CorpusCount counter(text, vocab_file, token_count, type_count, ngram_count, chain.BlockSize() / chain.EntrySize(), config.disallowed_symbol_action);
   chain >> boost::ref(counter);
 
   util::stream::Sort<SuffixOrder, AddCombiner> sorter(chain, config.sort, SuffixOrder(config.order), AddCombiner());
   chain.Wait(true);
-  std::cerr << "Unigram tokens " << token_count << " types " << type_count << std::endl;
-  std::cerr << "=== 2/5 Calculating and sorting adjusted counts ===" << std::endl;
+  std::cerr << "Unigram tokens " << token_count << " types " << type_count << " highest order ngrams " << ngram_count << std::endl;
+  if (!config.counts_only) {
+    std::cerr << "=== 2/5 Calculating and sorting adjusted counts ===" << std::endl;
+  }
   master.InitForAdjust(sorter, type_count);
 }
 
@@ -311,11 +313,12 @@ void Pipeline(PipelineConfig config, int text_file, int out_arpa) {
         util::MakeTemp(config.TempPrefix()) : 
         util::CreateOrThrow(config.vocab_file.c_str()));
     uint64_t token_count;
+    uint64_t ngram_count;
     std::string text_file_name;
-    CountText(text_file, vocab_file.get(), master, token_count, text_file_name);
+    CountText(text_file, vocab_file.get(), master, token_count, ngram_count, text_file_name);
 
-    std::vector<uint64_t> counts;
-    std::vector<uint64_t> counts_pruned;
+    std::vector<uint64_t> counts(config.order, 0);
+    std::vector<uint64_t> counts_pruned(config.order, 0);
     std::vector<Discount> discounts;
 
     if (!config.counts_only) {
@@ -329,11 +332,12 @@ void Pipeline(PipelineConfig config, int text_file, int out_arpa) {
       }
     } else {
       master >> DontAdjustCounts(); 
+      counts[config.order - 1] = counts_pruned[config.order - 1] = ngram_count;
     }
 
     std::cerr << "=== 5/5 Writing ARPA model ===" << std::endl;
     VocabReconstitute vocab(vocab_file.get());
-    //UTIL_THROW_IF(vocab.Size() != counts[0], util::Exception, "Vocab words don't match up.  Is there a null byte in the input?");
+    UTIL_THROW_IF(!config.counts_only && vocab.Size() != counts[0], util::Exception, "Vocab words don't match up.  Is there a null byte in the input?");
     HeaderInfo header_info(text_file_name, token_count);
     master >> PrintARPA(vocab, counts_pruned, (config.verbose_header ? &header_info : NULL), config.counts_only, out_arpa) >> util::stream::kRecycle;
     master.MutableChains().Wait(true);
