@@ -268,7 +268,6 @@ void CorpusCount::Run(const util::stream::ChainPosition &position) {
           continue;
         }
         if (started) {
-          //std::cerr << "NGRAM" << line.as_string() << std::endl;
           uint64_t c = 0;
           int i = 0;
           std::vector<WordIndex> words;
