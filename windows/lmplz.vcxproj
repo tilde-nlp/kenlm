@@ -170,7 +170,6 @@
     <None Include="..\lm\builder\initial_probabilities.hh" />
     <None Include="..\lm\builder\interpolate.hh" />
     <None Include="..\lm\builder\joint_order.hh" />
-    <None Include="..\lm\builder\multi_stream.hh" />
     <None Include="..\lm\builder\ngram.hh" />
     <None Include="..\lm\builder\ngram_stream.hh" />
     <None Include="..\lm\builder\pipeline.hh" />
